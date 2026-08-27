@@ -48,10 +48,10 @@ fn color_pass(
     let predicate = |rgb: &Rgb| {
         let (saturation, luma) = grab_sat_luma(*rgb);
 
-        max_luma.map_or(true, |m| luma <= m)
-            && min_luma.map_or(true, |m| luma >= m)
-            && max_saturation.map_or(true, |m| saturation <= m)
-            && min_saturation.map_or(true, |m| saturation >= m)
+        max_luma.is_none_or(|m| luma <= m)
+            && min_luma.is_none_or(|m| luma >= m)
+            && max_saturation.is_none_or(|m| saturation <= m)
+            && min_saturation.is_none_or(|m| saturation >= m)
     };
 
     colors.iter().copied().find(predicate)

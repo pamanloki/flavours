@@ -11,7 +11,7 @@
 
 ### Changes
 
-- Modernized the project and its dependencies: migrated from the unmaintained `clap` 3.0 beta to `clap` 4, bumped `image`, `palette`, `rand`, `dirs`, `toml`, `serde_yaml`, `shellexpand` and others to current releases, and moved to the 2021 edition (minimum supported Rust version is now 1.74).
+- Modernized the project and its dependencies: migrated from the unmaintained `clap` 3.0 beta to `clap` 4, bumped `image`, `palette`, `rand`, `dirs`, `toml`, `serde_yaml`, `shellexpand` and others to current releases, and moved to the 2024 edition (minimum supported Rust version is now 1.85).
 - Cleaned up all outstanding compiler and Clippy warnings.
 
 ## [0.7.1](https://github.com/Misterio77/flavours/releases/tag/v0.7.1)
