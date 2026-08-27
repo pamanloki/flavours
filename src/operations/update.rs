@@ -115,7 +115,7 @@ fn get_repo_list(file: &Path) -> Result<Vec<(String, String)>> {
         let line = line?;
         let (name, repo) = parse_yml_line(&line)?;
         let first = name.chars().next();
-        if first != Some('#') && first != None {
+        if first != Some('#') && first.is_some() {
             result.push((name.into(), repo));
         }
     }
@@ -232,10 +232,7 @@ fn update_lists(
     //Check if config file exists
     if !config_path.exists() {
         eprintln!("Config {:?} doesn't exist, creating", config_path);
-        let default_content = match read_to_string("/etc/flavours.conf") {
-            Ok(content) => content,
-            Err(_) => String::from(""),
-        };
+        let default_content = read_to_string("/etc/flavours.conf").unwrap_or_default();
         let config_path_parent = config_path
             .parent()
             .with_context(|| format!("Couldn't get parent directory of {:?}", config_path))?;
@@ -293,60 +290,48 @@ fn update_lists(
     let scheme_list = sources_dir.join("schemes").join("list.yaml");
     let template_list = sources_dir.join("templates").join("list.yaml");
 
-    match config.extra_scheme {
-        Some(extra_schemes) => {
-            if let Ok(scheme_lines) = read_lines(&scheme_list) {
-                // add new lines
-                let mut lines: Vec<String> = scheme_lines.collect::<Result<_, _>>().unwrap();
-                for es in &extra_schemes {
-                    let text = format!("{}: {}", es.name, es.source);
-                    lines.push(text);
-                };
+    if let Some(extra_schemes) = config.extra_scheme {
+        if let Ok(scheme_lines) = read_lines(&scheme_list) {
+            // add new lines
+            let mut lines: Vec<String> = scheme_lines.collect::<Result<_, _>>().unwrap();
+            for es in &extra_schemes {
+                let text = format!("{}: {}", es.name, es.source);
+                lines.push(text);
+            }
 
-                // sort everything
-                lines.sort();
+            // sort everything
+            lines.sort();
 
-                // save file
-                let mut write_file = OpenOptions::new()
-                    .write(true)
-                    .open(&scheme_list)
-                    .unwrap();
-                for line in &lines {
-                    if let Err(e) = writeln!(write_file, "{}", line) {
-                        eprintln!("Couldn't write to file: {}", e);
-                };
-                };
-            };
-        },
-        _ => ()
-    };
-    match config.extra_template {
-        Some(extra_templates) => {
-            if let Ok(template_lines) = read_lines(&template_list) {
-                // add new lines
-                let mut lines: Vec<String> = template_lines.collect::<Result<_, _>>().unwrap();
-                for et in &extra_templates {
-                    let text = format!("{}: {}", et.name, et.source);
-                    lines.push(text);
-                };
-
-                // sort everything
-                lines.sort();
-
-                // save file
-                let mut write_file = OpenOptions::new()
-                    .write(true)
-                    .open(&template_list)
-                    .unwrap();
-                for line in &lines {
-                    if let Err(e) = writeln!(write_file, "{}", line) {
-                        eprintln!("Couldn't write to file: {}", e);
-                };
+            // save file
+            let mut write_file = OpenOptions::new().write(true).open(&scheme_list).unwrap();
+            for line in &lines {
+                if let Err(e) = writeln!(write_file, "{}", line) {
+                    eprintln!("Couldn't write to file: {}", e);
                 }
-            };
-        },
-        _ => ()
-    };
+            }
+        }
+    }
+    if let Some(extra_templates) = config.extra_template {
+        if let Ok(template_lines) = read_lines(&template_list) {
+            // add new lines
+            let mut lines: Vec<String> = template_lines.collect::<Result<_, _>>().unwrap();
+            for et in &extra_templates {
+                let text = format!("{}: {}", et.name, et.source);
+                lines.push(text);
+            }
+
+            // sort everything
+            lines.sort();
+
+            // save file
+            let mut write_file = OpenOptions::new().write(true).open(&template_list).unwrap();
+            for line in &lines {
+                if let Err(e) = writeln!(write_file, "{}", line) {
+                    eprintln!("Couldn't write to file: {}", e);
+                }
+            }
+        }
+    }
 
     Ok(())
 }

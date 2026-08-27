@@ -5,7 +5,7 @@ use std::path::Path;
 /// Get current scheme
 ///
 /// * `dir` - flavours data directory
-fn get_current_scheme(dir: &Path) -> Result<String> {
+pub fn get_current_scheme(dir: &Path) -> Result<String> {
     // File that stores last used scheme
     let file_path = &dir.join("lastscheme");
     // Try to open it
@@ -26,8 +26,14 @@ fn get_current_scheme(dir: &Path) -> Result<String> {
 /// Current subcommand
 ///
 /// * `base_dir` - flavours data directory
+/// * `json` - Should we output the scheme as JSON?
 /// * `verbose` - Should we be verbose (unused atm)
-pub fn current(base_dir: &Path, _verbose: bool) -> Result<()> {
-    println!("{}", get_current_scheme(base_dir)?);
+pub fn current(base_dir: &Path, json: bool, _verbose: bool) -> Result<()> {
+    let scheme = get_current_scheme(base_dir)?;
+    if json {
+        println!("{}", serde_json::json!({ "scheme": scheme }));
+    } else {
+        println!("{}", scheme);
+    }
     Ok(())
 }

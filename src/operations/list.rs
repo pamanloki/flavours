@@ -10,12 +10,14 @@ use crate::find::find_schemes;
 /// * `config_dir` - flavours' config dir
 /// * `verbose` - Should we be verbose? (unused)
 /// * `lines` - Should we print each scheme on its own line?
+/// * `json` - Should we output a JSON array?
 pub fn list(
     patterns: Vec<&str>,
     base_dir: &Path,
     config_dir: &Path,
     _verbose: bool,
     lines: bool,
+    json: bool,
 ) -> Result<()> {
     let mut schemes = Vec::new();
     for pattern in patterns {
@@ -37,6 +39,11 @@ pub fn list(
     if schemes.is_empty() {
         return Err(anyhow!("No matching scheme found"));
     };
+
+    if json {
+        println!("{}", serde_json::to_string(&schemes)?);
+        return Ok(());
+    }
 
     for scheme in &schemes {
         // Print scheme

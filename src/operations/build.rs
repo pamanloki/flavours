@@ -20,7 +20,7 @@ pub fn build_template(template_base: &str, scheme: &Scheme) -> Result<String> {
 /// * `template_file` - Path to template
 pub fn build(scheme_file: &path::Path, template_file: &path::Path) -> Result<()> {
     //Read chosen scheme
-    let scheme_contents = &fs::read_to_string(&scheme_file)
+    let scheme_contents = &fs::read_to_string(scheme_file)
         .with_context(|| format!("Couldn't read scheme file at {:?}.", scheme_file))?;
 
     let slug = scheme_file

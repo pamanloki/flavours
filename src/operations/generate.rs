@@ -1,8 +1,8 @@
 use anyhow::{anyhow, Result};
+use image::DynamicImage;
 use palette::rgb::Rgb;
-use palette::{Hsl, Yxy};
+use palette::{FromColor, Hsl, Yxy};
 use std::collections::VecDeque;
-use std::path::Path;
 
 use crate::operations::info;
 
@@ -19,9 +19,9 @@ fn to_hex(color: Rgb) -> Result<String> {
 }
 
 fn grab_sat_luma(color: Rgb) -> (f32, f32) {
-    let yxy: Yxy = Yxy::from(color);
+    let yxy: Yxy = Yxy::from_color(color);
     let (_, _, luma) = yxy.into_components();
-    let hsl: Hsl = Hsl::from(color);
+    let hsl: Hsl = Hsl::from_color(color);
     let (_, saturation, _) = hsl.into_components();
     (saturation, luma)
 }
@@ -47,11 +47,11 @@ fn color_pass(
 ) -> Option<Rgb> {
     let predicate = |rgb: &Rgb| {
         let (saturation, luma) = grab_sat_luma(*rgb);
-        
-        (max_luma == None || luma <= max_luma.unwrap())
-            && (min_luma == None || luma >= min_luma.unwrap())
-            && (max_saturation == None || saturation <= max_saturation.unwrap())
-            && (min_saturation == None || saturation >= min_saturation.unwrap())
+
+        max_luma.map_or(true, |m| luma <= m)
+            && min_luma.map_or(true, |m| luma >= m)
+            && max_saturation.map_or(true, |m| saturation <= m)
+            && min_saturation.map_or(true, |m| saturation >= m)
     };
 
     colors.iter().copied().find(predicate)
@@ -63,43 +63,43 @@ fn light_color(colors: &[Rgb], verbose: bool) -> Result<Rgb> {
     let mut light = color_pass(colors, Some(0.6), None, None, Some(0.4));
 
     // Try again, but now we will accept saturated colors, as long as they're very bright
-    if light == None {
+    if light.is_none() {
         passes += 1;
         light = color_pass(colors, Some(0.7), None, None, Some(0.85));
     }
 
     // Try again, same as first, but a little more permissive
-    if light == None {
+    if light.is_none() {
         passes += 1;
         light = color_pass(colors, Some(0.5), None, None, Some(0.5));
     }
 
     // Try again, but accept more saturated colors
-    if light == None {
+    if light.is_none() {
         passes += 1;
         light = color_pass(colors, Some(0.6), None, None, Some(0.85));
     }
 
     // Try again, but now we will accept darker colors, as long as they're not saturated
-    if light == None {
+    if light.is_none() {
         passes += 1;
         light = color_pass(colors, Some(0.32), None, None, Some(0.4));
     }
 
     // Try again, but now we will accept even more saturated colors
-    if light == None {
+    if light.is_none() {
         passes += 1;
         light = color_pass(colors, Some(0.4), None, None, None);
     }
 
     // Try again, with darker colors
-    if light == None {
+    if light.is_none() {
         passes += 1;
         light = color_pass(colors, Some(0.3), None, None, None);
     }
 
     // Ok, we didn't find anything usable. So let's just grab the most dominant color (we'll lighten it later)
-    if light == None {
+    if light.is_none() {
         passes += 1;
         light = colors.first().copied();
     }
@@ -117,19 +117,19 @@ fn dark_color(colors: &[Rgb], verbose: bool) -> Result<Rgb> {
     let mut dark = color_pass(colors, Some(0.012), Some(0.1), Some(0.18), Some(0.9));
 
     // Try again, but now we will accept colors with any saturations, as long long as they're dark but not very dark
-    if dark == None {
+    if dark.is_none() {
         passes += 1;
         dark = color_pass(colors, Some(0.012), Some(0.1), None, None);
     }
 
     // Try again, but now we will accept darker colors too
-    if dark == None {
+    if dark.is_none() {
         passes += 1;
         dark = color_pass(colors, None, Some(0.1), None, None);
     }
 
     // Ok, we didn't find anything usable. So let's just grab the most dominant color (we'll darken it later)
-    if dark == None {
+    if dark.is_none() {
         passes += 1;
         dark = colors.first().copied()
     }
@@ -150,32 +150,32 @@ fn fix_colors(dark: Rgb, light: Rgb, mode: &Mode) -> (Rgb, Rgb) {
             // luma <= 0.015 && saturation <= 0.65
             let (saturation, luma) = grab_sat_luma(fg);
             if luma > 0.015 {
-                let yxy: Yxy = Yxy::from(fg);
+                let yxy: Yxy = Yxy::from_color(fg);
                 let (x, y, _) = yxy.into_components();
                 let yxy: Yxy = Yxy::from_components((x, y, 0.015));
-                fg = Rgb::from(yxy);
+                fg = Rgb::from_color(yxy);
             }
             if saturation > 0.65 {
-                let hsl: Hsl = Hsl::from(fg);
+                let hsl: Hsl = Hsl::from_color(fg);
                 let (h, _, l) = hsl.into_components();
                 let hsl: Hsl = Hsl::from_components((h, 0.65, l));
-                fg = Rgb::from(hsl);
+                fg = Rgb::from_color(hsl);
             }
 
             // Background should be light have:
             // luma >= 0.7 && saturation <= 0.12
             let (saturation, luma) = grab_sat_luma(light);
             if luma < 0.75 {
-                let yxy: Yxy = Yxy::from(bg);
+                let yxy: Yxy = Yxy::from_color(bg);
                 let (x, y, _) = yxy.into_components();
                 let yxy: Yxy = Yxy::from_components((x, y, 0.75));
-                bg = Rgb::from(yxy);
+                bg = Rgb::from_color(yxy);
             }
             if saturation > 0.12 {
-                let hsl: Hsl = Hsl::from(bg);
+                let hsl: Hsl = Hsl::from_color(bg);
                 let (h, _, l) = hsl.into_components();
                 let hsl: Hsl = Hsl::from_components((h, 0.15, l));
-                bg = Rgb::from(hsl);
+                bg = Rgb::from_color(hsl);
             }
             (bg, fg)
         }
@@ -186,40 +186,39 @@ fn fix_colors(dark: Rgb, light: Rgb, mode: &Mode) -> (Rgb, Rgb) {
             // luma >= 0.6 && saturation <= 0.15
             let (saturation, luma) = grab_sat_luma(light);
             if luma < 0.6 {
-                let yxy: Yxy = Yxy::from(fg);
+                let yxy: Yxy = Yxy::from_color(fg);
                 let (x, y, _) = yxy.into_components();
                 let yxy: Yxy = Yxy::from_components((x, y, 0.6));
-                fg = Rgb::from(yxy);
+                fg = Rgb::from_color(yxy);
             }
             if saturation > 0.15 {
-                let hsl: Hsl = Hsl::from(fg);
+                let hsl: Hsl = Hsl::from_color(fg);
                 let (h, _, l) = hsl.into_components();
                 let hsl: Hsl = Hsl::from_components((h, 0.15, l));
-                fg = Rgb::from(hsl);
+                fg = Rgb::from_color(hsl);
             }
             // Background should be dark and have:
             // luma <= 0.02 && saturation <= 0.6
             let (saturation, luma) = grab_sat_luma(dark);
             if luma > 0.02 {
-                let yxy: Yxy = Yxy::from(bg);
+                let yxy: Yxy = Yxy::from_color(bg);
                 let (x, y, _) = yxy.into_components();
                 let yxy: Yxy = Yxy::from_components((x, y, 0.02));
-                bg = Rgb::from(yxy);
+                bg = Rgb::from_color(yxy);
             }
             if saturation > 0.6 {
-                let hsl: Hsl = Hsl::from(bg);
+                let hsl: Hsl = Hsl::from_color(bg);
                 let (h, _, l) = hsl.into_components();
                 let hsl: Hsl = Hsl::from_components((h, 0.6, l));
-                bg = Rgb::from(hsl);
+                bg = Rgb::from_color(hsl);
             }
             (bg, fg)
         }
     }
 }
 
-pub fn generate(image_path: &Path, mode: Mode, verbose: bool) -> Result<VecDeque<String>> {
-    let img_buffer = image::open(image_path)?;
-    let img_pixels = img_buffer.to_rgba8().into_raw();
+pub fn generate(image: DynamicImage, mode: Mode, verbose: bool) -> Result<VecDeque<String>> {
+    let img_pixels = image.to_rgba8().into_raw();
 
     // Use color thief to get a palette
     let palette =
@@ -287,18 +286,18 @@ pub fn generate(image_path: &Path, mode: Mode, verbose: bool) -> Result<VecDeque
         // Change luma to something a bit more constant
         color = {
             // Get convert to yxy and get components
-            let yxy: Yxy = Yxy::from(color);
+            let yxy: Yxy = Yxy::from_color(color);
             let (x, y, luma) = yxy.into_components();
 
             // Get our intended luma
             let luma = match mode {
-                Mode::Light => luma.min(0.12).max(0.1),
+                Mode::Light => luma.clamp(0.1, 0.12),
                 Mode::Dark => luma.max(0.19),
             };
 
             // Build yxy again and convert back to rgb
             let yxy: Yxy = Yxy::from_components((x, y, luma));
-            Rgb::from(yxy)
+            Rgb::from_color(yxy)
         };
         // Add to the colors vector
         colors.push_back(to_hex(color)?);

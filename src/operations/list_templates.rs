@@ -10,12 +10,14 @@ use crate::find::find_templates;
 /// * `config_dir` - flavours' config dir
 /// * `verbose` - Should we be verbose? (unused)
 /// * `lines` - Should we print each scheme on its own line?
+/// * `json` - Should we output a JSON array?
 pub fn list(
     patterns: Vec<&str>,
     base_dir: &Path,
     config_dir: &Path,
     _verbose: bool,
     lines: bool,
+    json: bool,
 ) -> Result<()> {
     let mut templates = Vec::new();
     for pattern in patterns {
@@ -41,6 +43,11 @@ pub fn list(
     if templates.is_empty() {
         return Err(anyhow!("No matching template found"));
     };
+
+    if json {
+        println!("{}", serde_json::to_string(&templates)?);
+        return Ok(());
+    }
 
     for template in &templates {
         // Print template

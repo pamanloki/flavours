@@ -137,16 +137,28 @@ You can, for instance:
 #### Other commands
 Other commands include:
 - `flavours current` to see the last scheme you applied
+- `flavours toggle <scheme1> <scheme2> ...` to cycle through a list of schemes, applying the one that comes right after the currently applied one (wrapping around at the end). Globs are supported and expanded (sorted) into concrete schemes, so `flavours toggle "*"` walks through every installed scheme. Great for a keybind. Like `apply`, it accepts `--light`/`-l`.
 - `flavours list [PATTERN]` to list all available schemes
 - `flavours info [PATTERN]` to show info (including truecolor colored output) about some scheme(s)
 - `flavours build <path_to_scheme> <path_to_template>` (see [Build](#Build) below)
 - `flavours generate <dark|light> path/to/image/file` (see [Generate](#Generate) below)
+
+#### JSON output
+`current`, `list`, and `info` accept a `--json`/`-j` flag that makes them emit machine-readable JSON instead of plain text. This is handy for scripting, status bars, and tools like [`jq`](https://stedolan.github.io/jq/):
+- `flavours current --json` → `{"scheme":"pasque"}`
+- `flavours list --json` → `["atlas","pasque",...]` (works with `-t`/`--templates` too)
+- `flavours info "*" --json` → an array of `{scheme, slug, author, path, colors}` objects
+
+#### Colored output and `NO_COLOR`
+`flavours info` prints truecolor swatches by default. Colors are automatically disabled when standard output isn't a terminal (e.g. when piping into another program) or when the [`NO_COLOR`](https://no-color.org) environment variable is set to a non-empty value, in which case it falls back to plain `#rrggbb` output. You can also force plain output with `--raw`/`-r`.
 
 #### Build
 You can also use flavours as a simple [Base16 builder](https://github.com/chriskempson/base16/blob/master/builder.md). You can easily get a scheme path by using `flavours info theme_name | head -1 | cut -d '@' -f2`). This works great for automating static styles, and anything else you can come up with (I use it on my [personal website](https://misterio.me)).
 
 #### Generate
 Lastly, we have `flavours generate`, which can generate a scheme based on an image such as a wallpaper. By default, the scheme will be saved with the slug `generated`, but you can change it with `-s` or `--slug` or output to stdout instead with `--stdout`.
+
+You can also feed the image through standard input instead of a file, by passing `--stdin` (or using `-` as the file argument). This lets you pipe an image straight into flavours, e.g. `cat wallpaper.png | flavours generate dark --stdin --stdout`.
 
 ## Why
 Why use this instead of other Base16 managers, or even pywal?
