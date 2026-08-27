@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.8.0](https://github.com/Misterio77/flavours/releases/tag/v0.8.0)
+
+### Additions
+
+- Added a `toggle` subcommand, which cycles through the given schemes and applies the one after the currently applied scheme (wrapping around). Globs are expanded into concrete schemes, and it supports `--light`/`-l` like `apply`.
+- Added a `--json`/`-j` flag to `current`, `list` and `info` for machine-readable output, handy for scripting and status bars.
+- `flavours generate` can now read the image from standard input, via `--stdin` (or `-` as the file argument), so you can pipe an image straight into it.
+- `flavours info` now respects the [`NO_COLOR`](https://no-color.org) environment variable and automatically disables colored output when standard output isn't a terminal, falling back to plain `#rrggbb` output.
+
+### Changes
+
+- Modernized the project and its dependencies: migrated from the unmaintained `clap` 3.0 beta to `clap` 4, bumped `image`, `palette`, `rand`, `dirs`, `toml`, `serde_yaml`, `shellexpand` and others to current releases, and moved to the 2021 edition (minimum supported Rust version is now 1.74).
+- Cleaned up all outstanding compiler and Clippy warnings.
+
 ## [0.7.1](https://github.com/Misterio77/flavours/releases/tag/v0.7.1)
 
 ### Fixes

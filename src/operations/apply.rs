@@ -169,10 +169,7 @@ pub fn apply(
     //Check if config file exists
     if !config_path.exists() {
         eprintln!("Config {:?} doesn't exist, creating", config_path);
-        let default_content = match fs::read_to_string(path::Path::new("/etc/flavours.conf")) {
-            Ok(content) => content,
-            Err(_) => String::from(""),
-        };
+        let default_content = fs::read_to_string(path::Path::new("/etc/flavours.conf")).unwrap_or_default();
         let config_path_parent = config_path
             .parent()
             .with_context(|| format!("Couldn't get parent directory of {:?}", config_path))?;
@@ -206,7 +203,7 @@ pub fn apply(
     //Iterate configurated entries (templates)
     let items_legacy = config.item.unwrap_or_default();
     let mut items = config.items.unwrap_or_default();
-    items.extend(items_legacy.into_iter());
+    items.extend(items_legacy);
 
     if items.is_empty() {
         return Err(anyhow!("Couldn't get items from config file. Check the default file or github for config examples."));
@@ -306,7 +303,7 @@ pub fn apply(
     }
 
     let last_scheme_file = &base_dir.join("lastscheme");
-    fs::write(&last_scheme_file, &scheme.scheme_slug())
+    fs::write(last_scheme_file, scheme.scheme_slug())
         .with_context(|| "Couldn't update applied scheme name")?;
 
     while !hooks.is_empty() {

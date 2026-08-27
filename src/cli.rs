@@ -1,222 +1,244 @@
-use clap::{crate_authors, crate_version, App, AppSettings, Arg, ArgSettings, ValueHint};
+use clap::{crate_authors, crate_version, Arg, ArgAction, Command, ValueHint};
 
-pub fn build_cli() -> App<'static> {
-    App::new("flavours")
+pub fn build_cli() -> Command {
+    Command::new("flavours")
         .about("A simple way to manage and use base16 standard schemes and templates")
         .version(crate_version!())
         .author(crate_authors!())
-        .setting(AppSettings::PropagateVersion)
-        .setting(AppSettings::UnifiedHelpMessage)
-        .setting(AppSettings::DisableHelpSubcommand)
-        .setting(AppSettings::InferSubcommands)
-        .setting(AppSettings::ArgRequiredElseHelp)
-        .setting(AppSettings::ColoredHelp)
+        .propagate_version(true)
+        .disable_help_subcommand(true)
+        .infer_subcommands(true)
+        .arg_required_else_help(true)
         .arg(
             Arg::new("verbose")
-            .about("Be more verbose")
-            .long("verbose")
-            .short('v')
+                .help("Be more verbose")
+                .long("verbose")
+                .short('v')
+                .action(ArgAction::SetTrue),
         )
         .arg(
             Arg::new("config")
-            .about("Specify a configuration file (Defaults to ~/.config/flavours/config.toml on Linux)")
-            .long("config")
-            .short('c')
-            .value_name("FILE")
-            .value_hint(ValueHint::FilePath)
-            .takes_value(true)
+                .help("Specify a configuration file (Defaults to ~/.config/flavours/config.toml on Linux)")
+                .long("config")
+                .short('c')
+                .value_name("FILE")
+                .value_hint(ValueHint::FilePath),
         )
         .arg(
             Arg::new("directory")
-            .about("Specify a data directory (Defaults to ~/.local/share/flavours on Linux)")
-            .long("directory")
-            .short('d')
-            .value_name("DIRECTORY")
-            .value_hint(ValueHint::DirPath)
-            .takes_value(true)
+                .help("Specify a data directory (Defaults to ~/.local/share/flavours on Linux)")
+                .long("directory")
+                .short('d')
+                .value_name("DIRECTORY")
+                .value_hint(ValueHint::DirPath),
         )
         .arg(
             Arg::new("completions")
-            .setting(ArgSettings::Hidden)
-            .about("Generates completion for given shell, outputs to stdout")
-            .long("completions")
-            .takes_value(true)
-            .possible_values(&["bash", "elvish", "fish", "powershell", "zsh"])
+                .hide(true)
+                .help("Generates completion for given shell, outputs to stdout")
+                .long("completions")
+                .value_parser(["bash", "elvish", "fish", "powershell", "zsh"]),
         )
         .subcommand(
-            App::new("current")
+            Command::new("current")
                 .about("Prints last applied scheme name")
-                .setting(AppSettings::UnifiedHelpMessage)
-                .setting(AppSettings::DeriveDisplayOrder)
-                .setting(AppSettings::DisableHelpSubcommand)
-                .setting(AppSettings::DisableVersionFlag)
-                .setting(AppSettings::ColoredHelp)
+                .disable_help_subcommand(true)
+                .disable_version_flag(true)
+                .arg(
+                    Arg::new("json")
+                        .help("Output the current scheme as JSON")
+                        .long("json")
+                        .short('j')
+                        .action(ArgAction::SetTrue),
+                ),
         )
         .subcommand(
-            App::new("list")
+            Command::new("list")
                 .about("Prints a list with all matching schemes")
-                .setting(AppSettings::UnifiedHelpMessage)
-                .setting(AppSettings::DeriveDisplayOrder)
-                .setting(AppSettings::DisableHelpSubcommand)
-                .setting(AppSettings::DisableVersionFlag)
-                .setting(AppSettings::ColoredHelp)
+                .disable_help_subcommand(true)
+                .disable_version_flag(true)
                 .arg(
                     Arg::new("templates")
-                    .about("List templates instead of schemes")
-                    .long("templates")
-                    .short('t')
+                        .help("List templates instead of schemes")
+                        .long("templates")
+                        .short('t')
+                        .action(ArgAction::SetTrue),
                 )
                 .arg(
                     Arg::new("pattern")
-                    .about("Scheme name or glob pattern to match when listing scheme(s). If ommited, defaults to * (all installed schemes).")
-                    .setting(ArgSettings::MultipleValues)
-                    .value_hint(ValueHint::Other)
-                    .multiple_values(true)
+                        .help("Scheme name or glob pattern to match when listing scheme(s). If ommited, defaults to * (all installed schemes).")
+                        .value_hint(ValueHint::Other)
+                        .num_args(0..),
                 )
                 .arg(
                     Arg::new("lines")
-                    .about("Print each scheme on its own line")
-                    .long("lines")
-                    .short('l')
+                        .help("Print each scheme on its own line")
+                        .long("lines")
+                        .short('l')
+                        .action(ArgAction::SetTrue),
                 )
+                .arg(
+                    Arg::new("json")
+                        .help("Output the list as a JSON array")
+                        .long("json")
+                        .short('j')
+                        .action(ArgAction::SetTrue),
+                ),
         )
         .subcommand(
-            App::new("info")
+            Command::new("info")
                 .about("Shows scheme colors for all schemes matching pattern. Optionally uses truecolor")
-                .setting(AppSettings::UnifiedHelpMessage)
-                .setting(AppSettings::DeriveDisplayOrder)
-                .setting(AppSettings::DisableHelpSubcommand)
-                .setting(AppSettings::DisableVersionFlag)
-                .setting(AppSettings::ColoredHelp)
+                .disable_help_subcommand(true)
+                .disable_version_flag(true)
                 .arg(
                     Arg::new("pattern")
-                    .about("Scheme name or glob pattern to match when showing scheme(s). If ommited, defaults to * (all installed schemes).")
-                    .setting(ArgSettings::MultipleValues)
-                    .value_hint(ValueHint::Other)
-                    .multiple_values(true)
+                        .help("Scheme name or glob pattern to match when showing scheme(s). If ommited, defaults to * (all installed schemes).")
+                        .value_hint(ValueHint::Other)
+                        .num_args(0..),
                 )
                 .arg(
                     Arg::new("raw")
-                    .about("Don't pretty print the colors.")
-                    .long("raw")
-                    .short('r')
+                        .help("Don't pretty print the colors.")
+                        .long("raw")
+                        .short('r')
+                        .action(ArgAction::SetTrue),
                 )
+                .arg(
+                    Arg::new("json")
+                        .help("Output scheme information as JSON")
+                        .long("json")
+                        .short('j')
+                        .action(ArgAction::SetTrue),
+                ),
         )
         .subcommand(
-            App::new("generate")
+            Command::new("generate")
                 .about("Generates a scheme based on an image")
-                .setting(AppSettings::UnifiedHelpMessage)
-                .setting(AppSettings::DeriveDisplayOrder)
-                .setting(AppSettings::DisableHelpSubcommand)
-                .setting(AppSettings::DisableVersionFlag)
-                .setting(AppSettings::ColoredHelp)
+                .disable_help_subcommand(true)
+                .disable_version_flag(true)
                 .arg(
                     Arg::new("mode")
-                    .about("Whether to generate a dark or light scheme")
-                    .possible_values(&["dark", "light"])
-                    .required(true)
-                    .value_hint(ValueHint::Other)
+                        .help("Whether to generate a dark or light scheme")
+                        .value_parser(["dark", "light"])
+                        .required(true)
+                        .value_hint(ValueHint::Other),
                 )
                 .arg(
                     Arg::new("file")
-                    .about("Which image file to use.")
-                    .required(true)
-                    .value_hint(ValueHint::FilePath)
-                )
-                .arg(
-                    Arg::new("slug")
-                    .long("slug")
-                    .short('s')
-                    .about("Scheme slug (the name you specify when applying schemes) to output to. If ommited, defaults to 'generated'")
-                    .value_name("slug")
-                    .takes_value(true)
-                    .value_hint(ValueHint::Other)
-                )
-                .arg(
-                    Arg::new("name")
-                    .long("name")
-                    .short('n')
-                    .about("Scheme display name (can include spaces and capitalization) to write, defaults to 'Generated'")
-                    .value_name("name")
-                    .takes_value(true)
-                    .value_hint(ValueHint::Other)
-                )
-                .arg(
-                    Arg::new("author")
-                    .long("author")
-                    .short('a')
-                    .about("Scheme author info (name, email, etc) to write, defaults to 'Flavours'")
-                    .value_name("author")
-                    .takes_value(true)
-                    .value_hint(ValueHint::Other)
-                )
-                .arg(
-                    Arg::new("stdout")
-                    .about("Outputs scheme to stdout instead of writing it to a file.")
-                    .long("stdout")
-                )
-        )
-        .subcommand(
-            App::new("apply")
-                .about("Applies scheme, according to user configuration")
-                .setting(AppSettings::UnifiedHelpMessage)
-                .setting(AppSettings::DeriveDisplayOrder)
-                .setting(AppSettings::DisableHelpSubcommand)
-                .setting(AppSettings::DisableVersionFlag)
-                .setting(AppSettings::ColoredHelp)
-                .arg(
-                    Arg::new("pattern")
-                    .about("Scheme to be applied, supports glob. If more than one is specified (or if glob pattern matched more than one), chooses one randomly. If ommited, defaults to * (all installed schemes).")
-                    .value_hint(ValueHint::Other)
-                    .setting(ArgSettings::MultipleValues)
-                    .multiple_values(true)
-                )
-                .arg(
-                    Arg::new("light")
-                    .about("Skip running heavier hooks (entries marked 'light=false')")
-                    .long("light")
-                    .short('l')
+                        .help("Which image file to use. Use '-' or --stdin to read the image from standard input.")
+                        .required(false)
+                        .value_hint(ValueHint::FilePath),
                 )
                 .arg(
                     Arg::new("stdin")
-                    .about("Reads scheme from stdin instead of from flavours directory.")
-                    .long("stdin")
+                        .help("Read the image from standard input instead of a file.")
+                        .long("stdin")
+                        .action(ArgAction::SetTrue),
                 )
+                .arg(
+                    Arg::new("slug")
+                        .long("slug")
+                        .short('s')
+                        .help("Scheme slug (the name you specify when applying schemes) to output to. If ommited, defaults to 'generated'")
+                        .value_name("slug")
+                        .value_hint(ValueHint::Other),
+                )
+                .arg(
+                    Arg::new("name")
+                        .long("name")
+                        .short('n')
+                        .help("Scheme display name (can include spaces and capitalization) to write, defaults to 'Generated'")
+                        .value_name("name")
+                        .value_hint(ValueHint::Other),
+                )
+                .arg(
+                    Arg::new("author")
+                        .long("author")
+                        .short('a')
+                        .help("Scheme author info (name, email, etc) to write, defaults to 'Flavours'")
+                        .value_name("author")
+                        .value_hint(ValueHint::Other),
+                )
+                .arg(
+                    Arg::new("stdout")
+                        .help("Outputs scheme to stdout instead of writing it to a file.")
+                        .long("stdout")
+                        .action(ArgAction::SetTrue),
+                ),
         )
         .subcommand(
-            App::new("update")
+            Command::new("apply")
+                .about("Applies scheme, according to user configuration")
+                .disable_help_subcommand(true)
+                .disable_version_flag(true)
+                .arg(
+                    Arg::new("pattern")
+                        .help("Scheme to be applied, supports glob. If more than one is specified (or if glob pattern matched more than one), chooses one randomly. If ommited, defaults to * (all installed schemes).")
+                        .value_hint(ValueHint::Other)
+                        .num_args(0..),
+                )
+                .arg(
+                    Arg::new("light")
+                        .help("Skip running heavier hooks (entries marked 'light=false')")
+                        .long("light")
+                        .short('l')
+                        .action(ArgAction::SetTrue),
+                )
+                .arg(
+                    Arg::new("stdin")
+                        .help("Reads scheme from stdin instead of from flavours directory.")
+                        .long("stdin")
+                        .action(ArgAction::SetTrue),
+                ),
+        )
+        .subcommand(
+            Command::new("toggle")
+                .about("Cycles through the given schemes, applying the next one after the currently applied scheme")
+                .disable_help_subcommand(true)
+                .disable_version_flag(true)
+                .arg(
+                    Arg::new("pattern")
+                        .help("Schemes to cycle through, in order. Supports glob patterns, which are expanded (and sorted) into concrete schemes.")
+                        .value_hint(ValueHint::Other)
+                        .required(true)
+                        .num_args(1..),
+                )
+                .arg(
+                    Arg::new("light")
+                        .help("Skip running heavier hooks (entries marked 'light=false')")
+                        .long("light")
+                        .short('l')
+                        .action(ArgAction::SetTrue),
+                ),
+        )
+        .subcommand(
+            Command::new("update")
                 .about("Downloads schemes, templates, or updates their lists (from repos specified in sources.yml)")
-                .setting(AppSettings::UnifiedHelpMessage)
-                .setting(AppSettings::DeriveDisplayOrder)
-                .setting(AppSettings::DisableHelpSubcommand)
-                .setting(AppSettings::DisableVersionFlag)
-                .setting(AppSettings::ColoredHelp)
+                .disable_help_subcommand(true)
+                .disable_version_flag(true)
                 .arg(
                     Arg::new("operation")
-                    .about("Update sources lists from repositories or (re)download schemes/templates specified in the lists. Default repositories for lists, and the lists themselves, can be manually changed.")
-                    .required(true)
-                    .possible_values(&["lists", "schemes", "templates", "all"])
-                )
+                        .help("Update sources lists from repositories or (re)download schemes/templates specified in the lists. Default repositories for lists, and the lists themselves, can be manually changed.")
+                        .required(true)
+                        .value_parser(["lists", "schemes", "templates", "all"]),
+                ),
         )
         .subcommand(
-            App::new("build")
+            Command::new("build")
                 .about("Builds a template with given scheme, outputs to stdout")
-                .setting(AppSettings::UnifiedHelpMessage)
-                .setting(AppSettings::DeriveDisplayOrder)
-                .setting(AppSettings::DisableHelpSubcommand)
-                .setting(AppSettings::DisableVersionFlag)
-                .setting(AppSettings::ColoredHelp)
+                .disable_help_subcommand(true)
+                .disable_version_flag(true)
                 .arg(
                     Arg::new("scheme")
-                    .about("Path to scheme file.")
-                    .required(true)
-                    .value_hint(ValueHint::FilePath)
+                        .help("Path to scheme file.")
+                        .required(true)
+                        .value_hint(ValueHint::FilePath),
                 )
                 .arg(
                     Arg::new("template")
-                    .about("Path to template file.")
-                    .required(true)
-                    .value_hint(ValueHint::FilePath)
-                )
+                        .help("Path to template file.")
+                        .required(true)
+                        .value_hint(ValueHint::FilePath),
+                ),
         )
 }
