@@ -3,13 +3,13 @@ name = "flavours"
 description = "An easy to use base16 scheme manager/builder that integrates with any workflow."
 version = "0.8.0"
 authors = ["Gabriel Fontes (Misterio77) <eu@misterio.me>"]
-edition = "2021"
+edition = "2024"
 readme = "README.md"
 license = "MIT"
 keywords = ["base16", "color", "color-scheme", "manager", "cli"]
 categories = ["command-line-utilities"]
 repository = "https://github.com/Misterio77/flavours"
-rust-version = "1.74"
+rust-version = "1.85"
 
 [dependencies]
 base16_color_scheme = "0.3.0"

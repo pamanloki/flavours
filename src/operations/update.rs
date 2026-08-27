@@ -139,7 +139,6 @@ enum CloneType {
 fn git_clone(path: &Path, repo: String, verbose: bool, clone_type: CloneType) -> Result<()> {
     // Remove directory, ignores errors
     let _ = remove_dir_all(path);
-    set_var("GIT_TERMINAL_PROMPT", "0");
 
     // Try to clone into directory
     let command_clone = if verbose {
@@ -409,6 +408,15 @@ pub fn update(
     verbose: bool,
     config_path: &Path
 ) -> Result<()> {
+    // Disable interactive git credential prompts for every clone below. This is
+    // set once here, while still single-threaded, before any clone threads are
+    // spawned.
+    // SAFETY: no other threads are running at this point, so there is no
+    // concurrent access to the environment.
+    unsafe {
+        set_var("GIT_TERMINAL_PROMPT", "0");
+    }
+
     let base16_dir = &dir.join("base16");
     create_dir_all(base16_dir)?;
     match operation {
