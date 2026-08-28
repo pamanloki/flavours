@@ -1,16 +1,21 @@
 name: Release
 
-on: 
+on:
   push:
     tags:
       - "v*.*.*"
 
-jobs:
+# Required so the workflow's GITHUB_TOKEN can create/update the GitHub Release
+# and upload the built assets to it.
+permissions:
+  contents: write
 
+jobs:
   build:
     name: Build ${{ matrix.prefix }}
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         include:
           - prefix: x86_64-linux
@@ -25,50 +30,46 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
-      - name: Setup toolchain
-        uses: actions-rs/toolchain@v1
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
         with:
-            toolchain: stable
-            profile: minimal
-            override: true
-            target: ${{ matrix.target }}
+          targets: ${{ matrix.target }}
 
-      - name: Cache
-        uses: actions/cache@v2
+      - name: Cache cargo build
+        uses: Swatinem/rust-cache@v2
         with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ matrix.target }}
 
-      - name: Run cargo build
-        uses: actions-rs/cargo@v1
+      - name: Install cross
+        if: matrix.cross
+        uses: taiki-e/install-action@v2
         with:
-          use-cross: ${{ matrix.cross }}
-          command: build
-          args: --release --locked --target ${{ matrix.target }}
+          tool: cross
 
-      - name: Extract git tag
-        shell: bash
-        run: echo "##[set-output name=tag;]$(echo ${GITHUB_REF#refs/tags/})"
-        id: extract_tag
-      
-      - name: Packaging assets
+      - name: Build release binary
         shell: bash
         run: |
-          cd target/${{ matrix.target }}/release
-          cp $GITHUB_WORKSPACE/example.toml config.toml
-          cp $GITHUB_WORKSPACE/README.md README.md
-          cp $GITHUB_WORKSPACE/LICENSE LICENSE
-          tar czvf flavours-${{ steps.extract_tag.outputs.tag }}-${{ matrix.prefix }}.tar.gz flavours config.toml README.md LICENSE
-          shasum -a 256 flavours-${{ steps.extract_tag.outputs.tag }}-${{ matrix.prefix }}.tar.gz > flavours-${{ steps.extract_tag.outputs.tag }}-${{ matrix.prefix }}.sha256
-      
-      - name: Releasing assets
-        uses: softprops/action-gh-release@v1
+          if [ "${{ matrix.cross }}" = "true" ]; then
+            cross build --release --locked --target ${{ matrix.target }}
+          else
+            cargo build --release --locked --target ${{ matrix.target }}
+          fi
+
+      - name: Package assets
+        shell: bash
+        run: |
+          tag="${GITHUB_REF_NAME}"
+          archive="flavours-${tag}-${{ matrix.prefix }}"
+          cd "target/${{ matrix.target }}/release"
+          cp "$GITHUB_WORKSPACE/example.toml" config.toml
+          cp "$GITHUB_WORKSPACE/README.md" README.md
+          cp "$GITHUB_WORKSPACE/LICENSE" LICENSE
+          tar czvf "${archive}.tar.gz" flavours config.toml README.md LICENSE
+          shasum -a 256 "${archive}.tar.gz" > "${archive}.sha256"
+
+      - name: Upload assets to release
+        uses: softprops/action-gh-release@v2
         with:
           files: target/${{ matrix.target }}/release/flavours-*
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
