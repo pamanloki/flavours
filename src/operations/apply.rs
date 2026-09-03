@@ -11,6 +11,7 @@ use std::thread;
 use crate::config::Config;
 use crate::find::{find_schemes, find_template};
 use crate::operations::build::build_template;
+use crate::variant;
 
 /// Picks a random path, from given vec
 /// * `values` - Vec with paths
@@ -28,6 +29,16 @@ fn random(values: Vec<path::PathBuf>) -> Result<path::PathBuf> {
 /// * `command` - Command string to execute
 /// * `verbose` - Should we be verbose?
 fn run_hook(command: Option<String>, shell: &str, verbose: bool) -> Result<()> {
+    run_hook_with_env(command, shell, verbose, &[])
+}
+
+/// Runs hook commands, optionally injecting extra environment variables.
+fn run_hook_with_env(
+    command: Option<String>,
+    shell: &str,
+    verbose: bool,
+    env: &[(&str, &str)],
+) -> Result<()> {
     if let Some(command) = command {
         let full_command = shell.replace("{}", &command);
         if verbose {
@@ -35,20 +46,20 @@ fn run_hook(command: Option<String>, shell: &str, verbose: bool) -> Result<()> {
         }
         let command_vec = shell_words::split(&full_command)?;
 
-        if command_vec.len() == 1 {
+        let mut cmd = if command_vec.len() == 1 {
             process::Command::new(&command_vec[0])
-                .stdout(process::Stdio::null())
-                .stderr(process::Stdio::null())
-                .status()
-                .with_context(|| format!("Couldn't run hook '{}'", full_command))?;
         } else {
-            process::Command::new(&command_vec[0])
-                .args(&command_vec[1..])
-                .stdout(process::Stdio::null())
-                .stderr(process::Stdio::null())
-                .status()
-                .with_context(|| format!("Couldn't run hook '{}'", full_command))?;
+            let mut c = process::Command::new(&command_vec[0]);
+            c.args(&command_vec[1..]);
+            c
+        };
+        for (k, v) in env {
+            cmd.env(k, v);
         }
+        cmd.stdout(process::Stdio::null())
+            .stderr(process::Stdio::null())
+            .status()
+            .with_context(|| format!("Couldn't run hook '{}'", full_command))?;
     }
 
     Ok(())
@@ -312,6 +323,22 @@ pub fn apply(
             .ok_or_else(|| anyhow!("Couldn't pop hooks."))?
             .join()
             .unwrap()?;
+    }
+
+    // Global on-apply hook: runs once after all per-item hooks, receiving
+    // scheme metadata via environment variables. Skipped in `--light` mode
+    // like heavy per-item hooks.
+    if !light_mode {
+        if let Some(command) = config.on_apply {
+            let family = variant::family(&scheme.slug);
+            let mode = variant::variant(&scheme.slug);
+            let env: [(&str, &str); 3] = [
+                ("FLAVOURS_SCHEME", scheme.slug.as_str()),
+                ("FLAVOURS_FAMILY", family.as_str()),
+                ("FLAVOURS_MODE", mode.as_str()),
+            ];
+            run_hook_with_env(Some(command), &shell, verbose, &env)?;
+        }
     }
 
     if verbose {

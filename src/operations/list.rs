@@ -2,6 +2,7 @@ use anyhow::{anyhow, Result};
 use std::path::Path;
 
 use crate::find::find_schemes;
+use crate::variant;
 
 /// List subcommand
 ///
@@ -11,6 +12,7 @@ use crate::find::find_schemes;
 /// * `verbose` - Should we be verbose? (unused)
 /// * `lines` - Should we print each scheme on its own line?
 /// * `json` - Should we output a JSON array?
+/// * `long` - When paired with `json`, emit enriched objects instead of slugs
 pub fn list(
     patterns: Vec<&str>,
     base_dir: &Path,
@@ -18,6 +20,7 @@ pub fn list(
     _verbose: bool,
     lines: bool,
     json: bool,
+    long: bool,
 ) -> Result<()> {
     let mut schemes = Vec::new();
     for pattern in patterns {
@@ -41,7 +44,21 @@ pub fn list(
     };
 
     if json {
-        println!("{}", serde_json::to_string(&schemes)?);
+        if long {
+            let entries: Vec<_> = schemes
+                .iter()
+                .map(|slug| {
+                    serde_json::json!({
+                        "slug": slug,
+                        "family": variant::family(slug),
+                        "mode": variant::variant(slug).as_str(),
+                    })
+                })
+                .collect();
+            println!("{}", serde_json::to_string(&entries)?);
+        } else {
+            println!("{}", serde_json::to_string(&schemes)?);
+        }
         return Ok(());
     }
 

@@ -1,12 +1,22 @@
 # Changelog
 
-## Unreleased
+## [0.9.0](https://github.com/Misterio77/flavours/releases/tag/v0.9.0)
 
 ### Additions
 
-- Added a `partner` subcommand which prints the light/dark partner scheme of the currently applied scheme (or a given one), based on shared family name. Supports `--json`/`-j`. Useful for scripting picker UIs that want to show the "other" variant.
-- Added a `--mode <dark|light|toggle>` flag to `apply`, which switches to the light/dark partner of the currently applied scheme within the same family (`toggle` flips to the opposite variant, `dark`/`light` force one). Reapplies the current scheme (running hooks) if it is already at the requested variant, so it can be called idempotently from a GUI mode switch.
-- Family/variant detection is heuristic (based on the standard `-dark`/`-light`/`-dawn`/`-night`/`-day` suffixes and `-dark-`/`-light-` infixes), so schemes without a recognised suffix default to dark and have no partner. All new behaviour is additive: existing subcommands, flags, and JSON output formats are unchanged.
+- **Family-aware light/dark switching**: new `partner` subcommand prints the light/dark partner scheme of the currently applied scheme (or a given one), based on shared family name (`flavours partner [<scheme>] [--json]`).
+- **`apply --mode <dark|light|toggle>`**: switches to the light/dark partner of the currently applied scheme within the same family. `toggle` flips to the opposite variant, `dark`/`light` force one and reapply idempotently if already at the requested variant (safe to call from a GUI mode switch or sunrise/sunset script).
+- **`families` subcommand**: prints unique family names shared between light/dark variants (`flavours families [--json]`). JSON mode carries `{family, dark, light}` per entry — either slug is `null` if only one variant is installed. Handy for building picker menus that show one row per family.
+- **`list --json --long`** (or `-L`): switches the JSON output from a plain string array to enriched `[{slug, family, mode}]` entries. Requires `--json`; the default `--json` shape is unchanged for backwards compatibility.
+- **Global `on_apply` config hook**: new top-level `on_apply = "..."` in `config.toml` that runs once, through the configured `shell`, after all templates have been written and all per-item hooks have completed. Receives `FLAVOURS_SCHEME`, `FLAVOURS_FAMILY`, and `FLAVOURS_MODE` as environment variables. Skipped when `apply --light` is used, like heavy per-item hooks. Great for centralising notifications, wallpaper switching, or any post-apply glue.
+- Family/variant detection is heuristic (based on the standard `-dark`/`-light`/`-dawn`/`-night`/`-day` suffixes and `-dark-`/`-light-` infixes). Schemes without a recognised suffix default to dark and have no partner.
+
+### Backwards compatibility
+
+All additions are additive:
+- Existing subcommands, flags, and JSON output formats are byte-for-byte unchanged.
+- The new `on_apply` field is optional and defaults to nothing.
+- The new `list --long` output only activates when `--long` is explicitly passed alongside `--json`.
 
 ## [0.8.0](https://github.com/Misterio77/flavours/releases/tag/v0.8.0)
 
