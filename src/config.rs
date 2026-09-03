@@ -12,6 +12,13 @@ pub struct Config {
     pub extra_template: Option<Vec<ExtraSource>>,
     pub item: Option<Vec<ConfigItem>>,
     pub items: Option<Vec<ConfigItem>>,
+    /// Global hook executed once after all templates have been written and
+    /// each item's own `hook` has completed. Runs through the configured
+    /// `shell` and receives these environment variables:
+    ///   FLAVOURS_SCHEME  – slug of the applied scheme
+    ///   FLAVOURS_FAMILY  – family name (see `variant::family`)
+    ///   FLAVOURS_MODE    – "dark" or "light"
+    pub on_apply: Option<String>,
 }
 
 /// Structure for configuration extra sources

@@ -11,6 +11,14 @@
 # # Through which shell command hooks will run. The command will be replaced in '{}'
 # shell = "sh -c '{}'"
 #
+# # Optional command that runs once, after all templates have been written and
+# # per-item hooks have completed. Receives these environment variables:
+# #   FLAVOURS_SCHEME  – slug of the applied scheme
+# #   FLAVOURS_FAMILY  – family name (e.g. rose-pine for rose-pine-dawn)
+# #   FLAVOURS_MODE    – "dark" or "light"
+# # Skipped when flavours is run with --light, like heavy per-item hooks.
+# on_apply = 'notify-send -a Flavours "Theme applied" "$FLAVOURS_FAMILY ($FLAVOURS_MODE)"'
+#
 # [[items]]
 # # File to inject to, supports tilde and env var expansion. required
 # file = "~/.config/example"

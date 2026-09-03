@@ -83,6 +83,27 @@ pub fn build_cli() -> Command {
                         .long("json")
                         .short('j')
                         .action(ArgAction::SetTrue),
+                )
+                .arg(
+                    Arg::new("long")
+                        .help("With --json, emit enriched objects [{slug, family, mode}] instead of a plain string array")
+                        .long("long")
+                        .short('L')
+                        .action(ArgAction::SetTrue)
+                        .requires("json"),
+                ),
+        )
+        .subcommand(
+            Command::new("families")
+                .about("Prints unique scheme families (name shared between light/dark variants)")
+                .disable_help_subcommand(true)
+                .disable_version_flag(true)
+                .arg(
+                    Arg::new("json")
+                        .help("Output as JSON: [{family, dark, light}]")
+                        .long("json")
+                        .short('j')
+                        .action(ArgAction::SetTrue),
                 ),
         )
         .subcommand(

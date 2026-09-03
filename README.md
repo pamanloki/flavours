@@ -140,12 +140,28 @@ Other commands include:
 - `flavours toggle <scheme1> <scheme2> ...` to cycle through a list of schemes, applying the one that comes right after the currently applied one (wrapping around at the end). Globs are supported and expanded (sorted) into concrete schemes, so `flavours toggle "*"` walks through every installed scheme. Great for a keybind. Like `apply`, it accepts `--light`/`-l`.
 - `flavours apply --mode <dark|light|toggle>` to switch to the light/dark partner of the currently applied scheme (same family). `toggle` flips to the opposite variant, `dark`/`light` force one. Perfect for a GUI mode switch or sunrise/sunset script. If the current scheme is already at the requested variant, it is reapplied so hooks fire.
 - `flavours partner [<scheme>]` prints the light/dark partner slug of the given scheme (or the currently applied one). Accepts `--json`/`-j` for `{scheme, partner, family}` output.
-- `flavours list [PATTERN]` to list all available schemes
+- `flavours families` prints unique family names shared between light/dark variants. With `--json`, each entry becomes `{family, dark, light}` (either slug is `null` when only one variant is installed) — perfect for building picker UIs that show one row per family.
+- `flavours list [PATTERN]` to list all available schemes. With `--json --long`, emits enriched entries `[{slug, family, mode}]` instead of a plain string array.
 - `flavours info [PATTERN]` to show info (including truecolor colored output) about some scheme(s)
 - `flavours build <path_to_scheme> <path_to_template>` (see [Build](#Build) below)
 - `flavours generate <dark|light> path/to/image/file` (see [Generate](#Generate) below)
 
 Family/variant detection is a naming-convention heuristic: slugs ending in `-light`/`-dawn`/`-day` (or containing `-light-` as an infix) are treated as light, everything else as dark; the family is the slug with that suffix/infix stripped (so `rose-pine-dawn` and `rose-pine` share a family, and `gruvbox-dark-hard` and `gruvbox-light-hard` share a family). Schemes without a recognised suffix simply have no partner.
+
+#### Global on-apply hook
+
+In addition to per-item hooks, `config.toml` accepts a top-level `on_apply` command that runs once, through the configured `shell`, after all templates have been written and all per-item hooks have completed. It receives scheme metadata as environment variables:
+
+- `FLAVOURS_SCHEME` – slug of the applied scheme
+- `FLAVOURS_FAMILY` – family name (see the heuristic above)
+- `FLAVOURS_MODE` – `dark` or `light`
+
+Example:
+```toml
+on_apply = "notify-send -a Flavours 'Theme applied' \"$FLAVOURS_FAMILY ($FLAVOURS_MODE)\""
+```
+
+Like heavy per-item hooks, `on_apply` is skipped when `apply --light` is used.
 
 #### JSON output
 `current`, `list`, and `info` accept a `--json`/`-j` flag that makes them emit machine-readable JSON instead of plain text. This is handy for scripting, status bars, and tools like [`jq`](https://stedolan.github.io/jq/):

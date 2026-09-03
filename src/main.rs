@@ -10,7 +10,7 @@ use std::env;
 use std::io::Read;
 use std::path::Path;
 
-use flavours::operations::{apply, build, current, generate, info, list, list_templates, partner, toggle, update};
+use flavours::operations::{apply, build, current, families, generate, info, list, list_templates, partner, toggle, update};
 use flavours::variant;
 use flavours::{cli, completions};
 
@@ -171,6 +171,7 @@ fn main() -> Result<()> {
             let patterns = patterns_or_wildcard(sub_matches);
             let lines = sub_matches.get_flag("lines");
             let json = sub_matches.get_flag("json");
+            let long = sub_matches.get_flag("long");
 
             if sub_matches.get_flag("templates") {
                 list_templates::list(
@@ -189,8 +190,14 @@ fn main() -> Result<()> {
                     verbose,
                     lines,
                     json,
+                    long,
                 )
             }
+        }
+
+        Some(("families", sub_matches)) => {
+            let json = sub_matches.get_flag("json");
+            families::families(&flavours_dir, &flavours_config_dir, json, verbose)
         }
 
         Some(("update", sub_matches)) => {
