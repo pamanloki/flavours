@@ -138,10 +138,14 @@ You can, for instance:
 Other commands include:
 - `flavours current` to see the last scheme you applied
 - `flavours toggle <scheme1> <scheme2> ...` to cycle through a list of schemes, applying the one that comes right after the currently applied one (wrapping around at the end). Globs are supported and expanded (sorted) into concrete schemes, so `flavours toggle "*"` walks through every installed scheme. Great for a keybind. Like `apply`, it accepts `--light`/`-l`.
+- `flavours apply --mode <dark|light|toggle>` to switch to the light/dark partner of the currently applied scheme (same family). `toggle` flips to the opposite variant, `dark`/`light` force one. Perfect for a GUI mode switch or sunrise/sunset script. If the current scheme is already at the requested variant, it is reapplied so hooks fire.
+- `flavours partner [<scheme>]` prints the light/dark partner slug of the given scheme (or the currently applied one). Accepts `--json`/`-j` for `{scheme, partner, family}` output.
 - `flavours list [PATTERN]` to list all available schemes
 - `flavours info [PATTERN]` to show info (including truecolor colored output) about some scheme(s)
 - `flavours build <path_to_scheme> <path_to_template>` (see [Build](#Build) below)
 - `flavours generate <dark|light> path/to/image/file` (see [Generate](#Generate) below)
+
+Family/variant detection is a naming-convention heuristic: slugs ending in `-light`/`-dawn`/`-day` (or containing `-light-` as an infix) are treated as light, everything else as dark; the family is the slug with that suffix/infix stripped (so `rose-pine-dawn` and `rose-pine` share a family, and `gruvbox-dark-hard` and `gruvbox-light-hard` share a family). Schemes without a recognised suffix simply have no partner.
 
 #### JSON output
 `current`, `list`, and `info` accept a `--json`/`-j` flag that makes them emit machine-readable JSON instead of plain text. This is handy for scripting, status bars, and tools like [`jq`](https://stedolan.github.io/jq/):

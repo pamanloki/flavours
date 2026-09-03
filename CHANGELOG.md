@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+### Additions
+
+- Added a `partner` subcommand which prints the light/dark partner scheme of the currently applied scheme (or a given one), based on shared family name. Supports `--json`/`-j`. Useful for scripting picker UIs that want to show the "other" variant.
+- Added a `--mode <dark|light|toggle>` flag to `apply`, which switches to the light/dark partner of the currently applied scheme within the same family (`toggle` flips to the opposite variant, `dark`/`light` force one). Reapplies the current scheme (running hooks) if it is already at the requested variant, so it can be called idempotently from a GUI mode switch.
+- Family/variant detection is heuristic (based on the standard `-dark`/`-light`/`-dawn`/`-night`/`-day` suffixes and `-dark-`/`-light-` infixes), so schemes without a recognised suffix default to dark and have no partner. All new behaviour is additive: existing subcommands, flags, and JSON output formats are unchanged.
+
 ## [0.8.0](https://github.com/Misterio77/flavours/releases/tag/v0.8.0)
 
 ### Additions

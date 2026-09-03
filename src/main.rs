@@ -10,7 +10,8 @@ use std::env;
 use std::io::Read;
 use std::path::Path;
 
-use flavours::operations::{apply, build, current, generate, info, list, list_templates, toggle, update};
+use flavours::operations::{apply, build, current, generate, info, list, list_templates, partner, toggle, update};
+use flavours::variant;
 use flavours::{cli, completions};
 
 use std::fs::{create_dir_all, write};
@@ -91,9 +92,40 @@ fn main() -> Result<()> {
         }
 
         Some(("apply", sub_matches)) => {
-            let patterns = patterns_or_wildcard(sub_matches);
             let light = sub_matches.get_flag("light");
             let from_stdin = sub_matches.get_flag("stdin");
+            let mode = sub_matches.get_one::<String>("mode").map(String::as_str);
+
+            let resolved_target: Option<String> = if let Some(mode) = mode {
+                let current_slug = current::get_current_scheme(&flavours_dir)
+                    .context("--mode needs a currently applied scheme to switch from. Run 'flavours apply <scheme>' first.")?;
+                let target_variant = match mode {
+                    "dark" => variant::Variant::Dark,
+                    "light" => variant::Variant::Light,
+                    "toggle" => variant::variant(&current_slug).opposite(),
+                    _ => unreachable!("clap enforces the value_parser"),
+                };
+                if variant::variant(&current_slug) == target_variant {
+                    // Already at the requested variant; reapply the current
+                    // scheme so hooks fire (idempotent, safe to call from a
+                    // GUI toggle switch).
+                    Some(current_slug)
+                } else {
+                    Some(partner::resolve_partner(
+                        &current_slug,
+                        &flavours_dir,
+                        &flavours_config_dir,
+                    )?)
+                }
+            } else {
+                None
+            };
+
+            let patterns: Vec<&str> = match &resolved_target {
+                Some(target) => vec![target.as_str()],
+                None => patterns_or_wildcard(sub_matches),
+            };
+
             apply::apply(
                 patterns,
                 &flavours_dir,
@@ -103,6 +135,12 @@ fn main() -> Result<()> {
                 from_stdin,
                 verbose,
             )
+        }
+
+        Some(("partner", sub_matches)) => {
+            let scheme = sub_matches.get_one::<String>("scheme").map(String::as_str);
+            let json = sub_matches.get_flag("json");
+            partner::partner(scheme, &flavours_dir, &flavours_config_dir, json, verbose)
         }
 
         Some(("toggle", sub_matches)) => {
