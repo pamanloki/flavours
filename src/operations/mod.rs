@@ -5,5 +5,6 @@ pub mod generate;
 pub mod info;
 pub mod list;
 pub mod list_templates;
+pub mod partner;
 pub mod toggle;
 pub mod update;

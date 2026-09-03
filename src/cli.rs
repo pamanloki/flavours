@@ -188,6 +188,35 @@ pub fn build_cli() -> Command {
                     Arg::new("stdin")
                         .help("Reads scheme from stdin instead of from flavours directory.")
                         .long("stdin")
+                        .action(ArgAction::SetTrue)
+                        .conflicts_with("mode"),
+                )
+                .arg(
+                    Arg::new("mode")
+                        .help("Apply the light/dark partner of the current scheme (same family). Use 'toggle' to switch to the opposite variant, or 'dark'/'light' to force one.")
+                        .long("mode")
+                        .short('m')
+                        .value_parser(["dark", "light", "toggle"])
+                        .value_name("MODE")
+                        .conflicts_with("pattern")
+                        .conflicts_with("stdin"),
+                ),
+        )
+        .subcommand(
+            Command::new("partner")
+                .about("Prints the light/dark partner of the given scheme (or the currently applied one)")
+                .disable_help_subcommand(true)
+                .disable_version_flag(true)
+                .arg(
+                    Arg::new("scheme")
+                        .help("Scheme slug to find the partner of. Defaults to the currently applied scheme.")
+                        .value_hint(ValueHint::Other),
+                )
+                .arg(
+                    Arg::new("json")
+                        .help("Output as JSON: {scheme, partner, family}")
+                        .long("json")
+                        .short('j')
                         .action(ArgAction::SetTrue),
                 ),
         )
